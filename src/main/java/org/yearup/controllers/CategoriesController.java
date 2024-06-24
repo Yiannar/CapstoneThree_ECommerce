@@ -1,10 +1,12 @@
 package org.yearup.controllers;
 
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.*;
 import org.yearup.data.CategoryDao;
 import org.yearup.data.ProductDao;
+import org.yearup.data.mysql.MySqlCategoryDao;
+import org.yearup.data.mysql.MySqlProductDao;
 import org.yearup.models.Category;
 import org.yearup.models.Product;
 
@@ -14,6 +16,8 @@ import java.util.List;
 // add the annotation to make this controller the endpoint for the following url
     // http://localhost:8080/categories
 // add annotation to allow cross site origin requests
+
+@RestController
 public class CategoriesController
 {
     private CategoryDao categoryDao;
@@ -21,12 +25,22 @@ public class CategoriesController
 
 
     // create an Autowired controller to inject the categoryDao and ProductDao
+    @Autowired
+    public CategoriesController(MySqlCategoryDao mySqlCategoryDao, MySqlProductDao mySqlProductDao){
+        this.categoryDao = mySqlCategoryDao;
+        this.productDao = mySqlProductDao;
+    }
 
     // add the appropriate annotation for a get action
-    public List<Category> getAll()
+    @GetMapping("/categories")
+    @ResponseStatus(value=HttpStatus.OK)
+    public List<Category> getAllCategories(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String description
+    )
     {
         // find and return all categories
-        return null;
+        return categoryDao.getAllCategories(name, description);
     }
 
     // add the appropriate annotation for a get action
