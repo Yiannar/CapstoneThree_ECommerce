@@ -1,28 +1,98 @@
 package org.yearup.data.mysql;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.yearup.data.CategoryDao;
 import org.yearup.models.Category;
 
 import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
 @Component
-public class MySqlCategoryDao extends MySqlDaoBase implements CategoryDao
+public class MySqlCategoryDao implements CategoryDao
 {
+    private DataSource dataSource;
+
+    @Autowired
     public MySqlCategoryDao(DataSource dataSource)
     {
-        super(dataSource);
+        this.dataSource = dataSource;
     }
 
     @Override
-    public List<Category> getAllCategories()
-    {
+    public List<Category> getAllCategories(String name, String description, int category_id) {
+        List<Category> categories = new ArrayList<>();
+
+        String query = "SELECT * FROM categories WHERE name LIKE ? AND description LIKE ? AND (category_id = ? OR ? = -1)";
+
+        int categoryToSearch = category_id == 0 ? -1 : category_id;
+        String nameToSearch = name == null ? "" : name;
+        String descriptionToSearch = description == null ? "" : description;
+
+        try (
+                Connection connection = dataSource.getConnection();
+                PreparedStatement preparedStatement = connection.prepareStatement(query);
+        ) {
+            preparedStatement.setString(1, "%" + nameToSearch + "%");
+            preparedStatement.setString(2, "%" + descriptionToSearch + "%");
+            preparedStatement.setInt(3, categoryToSearch);
+            preparedStatement.setInt(4, categoryToSearch);  // Add this line to match the query
+
+            ResultSet resultSet = preparedStatement.executeQuery();
+
+            while (resultSet.next()) {
+                Category category = mapRow(resultSet);
+                categories.add(category);
+            }
+
+            resultSet.close();
+            preparedStatement.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
         // get all categories
-        return null;
+        return categories;
     }
+
+    @Override
+    public List<Category> getAllCategories(String name, String description) {
+        List<Category> categories = new ArrayList<>();
+
+        String query = "SELECT * FROM categories WHERE name LIKE ? AND description LIKE ?";
+
+        String nameToSearch = name == null ? "" : name;
+        String descriptionToSearch = description == null ? "" : description;
+
+        try (
+                Connection connection = dataSource.getConnection();
+                PreparedStatement preparedStatement = connection.prepareStatement(query);
+        ) {
+            preparedStatement.setString(1, "%" + nameToSearch + "%");
+            preparedStatement.setString(2, "%" + descriptionToSearch + "%");
+
+            ResultSet resultSet = preparedStatement.executeQuery();
+
+            while (resultSet.next()) {
+                Category category = mapRow(resultSet);
+                categories.add(category);
+            }
+
+            resultSet.close();
+            preparedStatement.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        // get all categories
+        return categories;
+    }
+
 
     @Override
     public Category getById(int categoryId)
