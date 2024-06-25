@@ -41,7 +41,7 @@ public class MySqlCategoryDao implements CategoryDao
             preparedStatement.setString(1, "%" + nameToSearch + "%");
             preparedStatement.setString(2, "%" + descriptionToSearch + "%");
             preparedStatement.setInt(3, categoryToSearch);
-            preparedStatement.setInt(4, categoryToSearch);  // Add this line to match the query
+            preparedStatement.setInt(4, categoryToSearch);
 
             ResultSet resultSet = preparedStatement.executeQuery();
 
@@ -98,7 +98,28 @@ public class MySqlCategoryDao implements CategoryDao
     public Category getById(int categoryId)
     {
         // get category by id
-        return null;
+
+        Category category = null;
+        String query = "SELECT * FROM categories WHERE category_id=?";
+
+        try(
+                Connection connection = dataSource.getConnection();
+                PreparedStatement preparedStatement = connection.prepareStatement(query);
+                ){
+            preparedStatement.setInt(1, categoryId);
+
+            try(
+                    ResultSet resultSet = preparedStatement.executeQuery();
+                    ){
+                while (resultSet.next()){
+                    category = mapRow(resultSet);
+                    break;
+                }
+            }
+        } catch (SQLException sqlException){
+            sqlException.printStackTrace();
+        }
+        return category;
     }
 
     @Override
