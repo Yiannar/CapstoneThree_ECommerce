@@ -51,7 +51,6 @@ public class MySqlCategoryDao implements CategoryDao
             }
 
             resultSet.close();
-            preparedStatement.close();
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -84,7 +83,6 @@ public class MySqlCategoryDao implements CategoryDao
             }
 
             resultSet.close();
-            preparedStatement.close();
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -123,22 +121,82 @@ public class MySqlCategoryDao implements CategoryDao
     }
 
     @Override
-    public Category create(Category category)
-    {
+    public Category create(Category category) {
+
         // create a new category
-        return null;
+        String query = "INSERT INTO categories (name, description) VALUES (?, ?)";
+
+        try (
+                Connection connection = dataSource.getConnection();
+                PreparedStatement preparedStatement = connection.prepareStatement(query, PreparedStatement.RETURN_GENERATED_KEYS);
+        ) {
+            preparedStatement.setString(1, category.getName());
+            preparedStatement.setString(2, category.getDescription());
+
+            int rowsAffected = preparedStatement.executeUpdate();
+
+            if (rowsAffected > 0) {
+                try (ResultSet generatedKeys = preparedStatement.getGeneratedKeys()) {
+                    if (generatedKeys.next()) {
+                        category.setCategoryId(generatedKeys.getInt(1));
+                    }
+                }
+                System.out.println("Insert successful.");
+            } else {
+                System.out.println("Insert failed or no rows affected.");
+            }
+        } catch (SQLException sql) {
+            sql.printStackTrace();
+        }
+
+        return category;
     }
 
+
     @Override
-    public void update(int categoryId, Category category)
-    {
+    public void update(int categoryId, Category category) {
         // update category
+        String query = "UPDATE categories SET name=?, description=? WHERE categoryId=?";
+
+        try (
+                Connection connection = dataSource.getConnection();
+                PreparedStatement preparedStatement = connection.prepareStatement(query);
+        ) {
+            preparedStatement.setString(1, category.getName());
+            preparedStatement.setString(2, category.getDescription());
+            preparedStatement.setInt(3, categoryId); // Use the method parameter to set the categoryId in the WHERE clause
+
+            // Execute the update
+            int rowsAffected = preparedStatement.executeUpdate();
+
+            // Optionally, you can check the number of rows affected
+            if (rowsAffected > 0) {
+                System.out.println("Update successful.");
+            } else {
+                System.out.println("Update failed or no rows affected.");
+            }
+        } catch (SQLException sql) {
+            sql.printStackTrace();
+        }
     }
 
     @Override
     public void delete(int categoryId)
     {
         // delete category
+
+        String query = "DELETE FROM categories WHERE category_id=?";
+
+        try(
+                Connection connection = dataSource.getConnection();
+                PreparedStatement preparedStatement = connection.prepareStatement(query);
+                ){
+
+            preparedStatement.setInt(1, categoryId);
+            preparedStatement.executeUpdate();
+        } catch (SQLException sql){
+            sql.printStackTrace();
+        }
     }
 
     private Category mapRow(ResultSet row) throws SQLException
